@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, Param, Delete, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Delete, Res, UseGuards, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AccessTokenAuthGuard } from '../auth/token-auth.guard';
@@ -6,6 +6,7 @@ import { PolciesGuard } from '../guards/policies-guard/policies.guard';
 import { CheckPermissions } from '../casl/check-policies.decorator';
 import { Action } from '../casl/enums/actions.enum';
 import { Subject } from '../casl/enums/subjects.enum';
+import { MetaDataDto } from './dto/dto';
 
 @Controller('users')
 export class UsersController {
@@ -16,7 +17,9 @@ export class UsersController {
   @Get()
   @UseGuards(AccessTokenAuthGuard, PolciesGuard)
   @CheckPermissions([Action.READ, Subject.USER])
-  findAll() {
+  findAll(
+    @Query() query: MetaDataDto
+  ) {
     return this.usersService.findAll();
   }
 
