@@ -1,0 +1,1 @@
+export const positiveIntRegex = /^\+?(0|[1-9]\d*)+$/;

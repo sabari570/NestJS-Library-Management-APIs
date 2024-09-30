@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// ####################################
+// AFTER REDEFINING THE PRISMA SCHEMA EXECUTE THESE COMMANDS
+// * npx prisma migrate dev --name <migration_name>
+// * To regenerate the client: npx prisma generate
+// ###################################
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("USER")
+  loans     Loan[]
+  createdAt DateTime @default(now()) @map("created_at") // @map("created_at") means the field in the users table will be created_at
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // This @@map("users")  means that when the SQL query is written the table name will be users
+  @@map("users")
+}
+
+// @relation("BookAuthors") is the name given to this relation
+// Its best to name the relations if one model has multiple relations
+
+// *******
+// When you define authors Author[] @relation("BookAuthors") in the Book model 
+// and books Book[] @relation("BookAuthors") in the Author model, 
+// Prisma implicitly creates a many-to-many relationship. 
+// This means that Prisma will automatically generate a join table for you, 
+// and you don’t need to define foreign keys manually. 
+// Prisma will ensure that the join table includes the authorId and bookId as foreign keys referencing the Author and Book models, respectively.
+// *********
+model Book {
+  id         Int        @id @default(autoincrement())
+  title      String
+  isbn       String     @unique
+  published  DateTime
+  autors     Author[]   @relation("BookAuthors") // If you provide a relation name like this Prisma automatically handles the creation of foreign keys and the necessary join tables behind the scenes 
+  categories Category[] @relation("BookCategories")
+  loans      Loan[]
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@map("books")
+}
+
+model Author {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  books     Book[]   @relation("BookAuthors")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("authors")
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  books Book[] @relation("BookCategories")
+
+  @@map("categories")
+}
+
+model Loan {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  User       User      @relation(fields: [userId], references: [id])
+  bookId     Int       @map("book_id")
+  Book       Book      @relation(fields: [bookId], references: [id])
+  loanDate   DateTime  @default(now()) @map("loan_date")
+  returnDate DateTime? @map("return_date")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@map("loans")
+}
