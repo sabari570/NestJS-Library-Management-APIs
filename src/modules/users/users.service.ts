@@ -17,6 +17,7 @@ import * as bcrypt from 'bcrypt';
 import UserInterface from './interface/user.interface';
 import { Role } from './enums/role-status.enum';
 import { StringService } from '../../helpers/string.service';
+import { MetaDataDto } from './dto/dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService {
@@ -139,8 +140,10 @@ export class UsersService {
     }
   }
 
-  findAll() {
-    return `This action returns all users`;
+  // User service file code to fetch all users using the query params
+  async findAll(query: MetaDataDto) {
+    this.loggerService.log(`User > getAll(): called`);
+    console.log("Query passed: ", query)
   }
 
   findOne(id: number) {

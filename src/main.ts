@@ -6,7 +6,7 @@ import * as cookieParser from 'cookie-parser';
 import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule,);
   app.use(helmet());
   app.use((req, res, next) => {
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -26,6 +26,9 @@ async function bootstrap() {
     whitelist: true,  // Strip properties that are not in the DTO
     forbidNonWhitelisted: false, // Throw an error for no-whitelisted properties,
     transform: true,  // Automatically transform payloads to DTO instances
+    transformOptions: {
+      enableImplicitConversion: true  // The transformOptions with { enableImplicitConversion: true } is particularly important for handling transformations within DTOs.
+    }
   }))
   const port = process.env.PORT || 3000;
   await app.listen(port).then(() => {

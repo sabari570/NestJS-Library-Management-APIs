@@ -37,6 +37,7 @@
     "jwks-rsa": "^3.1.0",
     "jwt-decode": "^4.0.0",
     "library_management_apis": "file:",
+    "luxon": "^3.5.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prisma": "^5.20.0",

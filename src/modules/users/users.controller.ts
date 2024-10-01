@@ -10,7 +10,8 @@ import { MetaDataDto } from './dto/dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService,
+  ) { }
 
   // The @UseGuards with the AccessTokenAuthGuard & PolciesGuard together along with the
   // @CheckPermissions custom decorator make this route protected from users allowing only the ADMIN complete access to this route and not the USERS
@@ -20,7 +21,7 @@ export class UsersController {
   findAll(
     @Query() query: MetaDataDto
   ) {
-    return this.usersService.findAll();
+    return this.usersService.findAll(query);
   }
 
   @Get(':id')

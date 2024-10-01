@@ -8,7 +8,7 @@ interface ToNumberOptions {
 
 export function toNumber(value: string, opts: ToNumberOptions = {}): number {
     let newValue: number;
-    if (positiveIntRegex.test(value.trim())) {
+    if (positiveIntRegex.test(value.toString().trim())) {
         newValue = Number.parseInt(value);
     } else {
         newValue = opts.default || 1;
