@@ -8,14 +8,16 @@ import { IsCorrectValue } from "src/validators/is-correct-value.validator";
 export class FilterDto {
     @IsString()
     @IsNotEmpty()
-    @IsFilterField()
+    // @IsFilterField()
     field: string | ModuleNames;
 
     @IsString()
     @IsNotEmpty()
-    @IsCorrectOperator()
+    // @IsCorrectOperator()
     operator: Operators;
 
-    @IsCorrectValue()
+    // @IsCorrectValue()
+    @IsNotEmpty()
+    @IsString()
     value: any;
 }

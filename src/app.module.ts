@@ -6,6 +6,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CaslModule } from './modules/casl/casl.module';
 import { MetaDataModule } from './meta-data/meta-data.module';
+import { ValidatorModule } from './validators/validator.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MetaDataModule } from './meta-data/meta-data.module';
     AuthModule,
     CaslModule,
     MetaDataModule,
+    ValidatorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

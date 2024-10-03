@@ -4,7 +4,6 @@ import {
   Inject,
   Injectable,
   Logger,
-  LoggerService,
   Scope,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,6 +17,9 @@ import UserInterface from './interface/user.interface';
 import { Role } from './enums/role-status.enum';
 import { StringService } from '../../helpers/string.service';
 import { MetaDataDto } from './dto/dto';
+import { MetaDataService } from 'src/meta-data/meta-data.service';
+import { ModuleNames } from 'src/meta-data/enums/modules.enum';
+import { UserResDto } from './dto/user-response.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService {
@@ -26,6 +28,7 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly loggerService: Logger,
     private readonly stringService: StringService,
+    private readonly metaDataService: MetaDataService,
     @Inject(REQUEST) private readonly request: any,
   ) {
     this.currentUser = {};
@@ -143,8 +146,21 @@ export class UsersService {
   // User service file code to fetch all users using the query params
   async findAll(query: MetaDataDto) {
     this.loggerService.log(`User > getAll(): called`);
-    console.log("Query passed: ", query)
+    try {
+      let { queryBuilder, paginationQuery } = this.metaDataService.generateMetaDataForQueryBuilder(
+        query,
+        ModuleNames.USERS,
+      )
+      const userRecords = await this.usersRepository.getAll(queryBuilder);
+      console.log("User records obtained: ", userRecords);
+      const users = userRecords.map((user) => new UserResDto(user));
+      const { take, page } = paginationQuery;
+    } catch (error) {
+      this.loggerService.error(`User > findAll(): ${error}`);
+      throw new BadRequestException([Message().defaultApiMessage]);
+    }
   }
+
 
   findOne(id: number) {
     return `This action returns a #${id} user`;

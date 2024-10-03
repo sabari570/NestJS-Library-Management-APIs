@@ -78,4 +78,19 @@ export class UsersRepository {
       }
     })
   }
+
+
+  // code to count the total records
+  async count(): Promise<number> {
+    return await this.client.user.count();
+  }
+
+  // Code to count the total records after applying filter
+  // async countWithFilters(where): Promise<number> {
+  //   const { _count } = await this.client.user.aggregate({
+  //     _count: true,
+  //     where,
+  //   });
+  //   return _count;
+  // }
 }

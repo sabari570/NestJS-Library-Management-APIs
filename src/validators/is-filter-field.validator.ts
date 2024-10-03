@@ -7,9 +7,14 @@ import { MetaDataService } from "src/meta-data/meta-data.service";
 export class IsFiltetFieldConstraint implements ValidatorConstraintInterface {
     constructor(private metaDataService: MetaDataService) { }
     async validate(inputDate: string) {
-        const fields = this.metaDataService.getFields();
+        try {
+            const fields = this.metaDataService.getFields();
 
-        return fields?.some((field) => field === inputDate);
+            return fields?.some((field) => field === inputDate);
+        } catch (error) {
+            console.log("Error > IsFilterFieldConstarint: ", error);
+            return false;
+        }
     }
     defaultMessage(validationArguments?: ValidationArguments): string {
         return ': We cannot filter using those criteria'

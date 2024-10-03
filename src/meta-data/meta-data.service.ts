@@ -11,10 +11,16 @@ import { ArrayType } from './enums/array-type.enum';
 import { DateTime } from "luxon"
 import ValueInterface from './interfaces/value.interface';
 import ModuleInterface from './interfaces/filter.interface';
+import MetaDataInterface from './interfaces/meta-data.interface';
+import Pagination from './interfaces/pagination.interface';
+import { FilterDto } from './dto/filter.dto';
+import QueryParamInterface from './interfaces/query-param.interface';
+import { Operators } from './enums/operators/operators.enum';
+import { OrderByDto } from './dto/order.dto';
 
 @Injectable()
 export class MetaDataService {
-    readonly defaultCount = 25;
+    readonly defaultCount = 10;
     readonly defaultPage = 1;
 
     // This is the filtersObject type it contains a list of filter objects
@@ -33,16 +39,14 @@ export class MetaDataService {
         // If the value is of type string it checks whether it is actually a string or number if number then it returns false and fails to validate
         private readonly filterValueFactory: FilterValueFactory,
 
-        // This is actually used to generate query from the filter object we have passed inorder to fetch the records from the DB
+        // This is actually used to generate qmetaDataServiceuery from the filter object we have passed inorder to fetch the records from the DB
         private readonly filterQueryBuilderFactory: FilterQueryBuilderFactory,
 
         // This is a service which is used to convert the enums to objects | values
         private readonly enumService: EnumService,
         private readonly loggerService: Logger,
         private readonly stringService: StringService,
-    ) {
-        console.log("MetaDataService instance created")
-    }
+    ) { }
 
     // this function is used to set the module which we are using and to set the filtersObject
     setModule(moduleName, filterObject?): boolean {
@@ -126,5 +130,226 @@ export class MetaDataService {
             )
         }
         return false;
+    }
+
+    // This function generates the meta data for filter as well as pagination query
+    generateMetaDataForQueryBuilder(
+        query: MetaDataInterface,
+        moduleName = null
+    ) {
+        this.loggerService.log(`${moduleName} > generateMetaDataForQueryBuilder(): callled`);
+
+        let success: boolean;
+        // Set the filtersObject witht the module name provided
+        if (!this.moduleName) {
+            success = this.setModule(moduleName);
+            if (!success) return;
+        }
+
+        if (query.filter) {
+            // Checked whether the filter query contains the fields that is meant to be present for the given module
+            const fields = this.getFields();
+            success = fields?.some((field) => (
+                query.filter?.some((filter) => filter.field === field)
+            ));
+            if (!success) throw new Error("Field name is invalid");
+
+            // Validating the operators of the filters passed
+            success = query.filter.every((filter) => (
+                this.validateOperators(filter.operator, filter.field, filter.value)
+            ))
+            if (!success) throw new Error("Operator provided is invalid");
+
+            // Validating the values of the filters passed
+            success = query.filter.every((filter) => (
+                this.validateValues(filter.value, filter.operator, filter.field)
+            ))
+            if (!success) throw new Error("Value is invalid");
+        }
+        // Creating a pagination object
+        const paginationObject: Pagination = {
+            count: query.count,
+            page: query.page,
+        }
+        const paginationQuery = this.generatePaginationForQueryBuilder(paginationObject);
+        const { take, skip } = paginationQuery;
+        const filterQuery = this.generateFilterForQueryBuilder(query.filter);
+        const sortQuery = this.generateSortForQueryBuilder(query.order);
+
+        // Now we write the combined query object
+        const queryBuilder = {
+            take,
+            skip,
+            ...sortQuery,
+            where: {
+                // AND condtion is applied such that it applies all the filters and then return the results
+                AND: [...filterQuery]
+            }
+        }
+
+        const hasQueryFilter = (filterQuery) ?
+            JSON.stringify(filterQuery) : 'No filter';
+
+        this.loggerService.log(`${moduleName} > generateMetaDataForQueryBuilder(): Query filter - ${hasQueryFilter}`);
+        this.loggerService.log(`${moduleName} > generateMetaDataForQueryBuilder(): success`);
+        return {
+            queryBuilder,
+            paginationQuery
+        }
+    }
+
+    // This function is to return the pagination query object that returns the count, page and skip
+    generatePaginationForQueryBuilder(paginationQuery: Pagination) {
+        const take = Number(paginationQuery.count) ? Number(paginationQuery.count) : this.defaultCount;
+        const page = Number(paginationQuery.page) ? Number(paginationQuery.page) : this.defaultPage;
+
+        const skip = (page - 1) * take;
+        return { take, page, skip };
+    }
+
+    // Function to generate the filter query
+    generateFilterForQueryBuilder(filters: FilterDto[]) {
+        const queryObject = [];
+        filters?.forEach((filter) => {
+            const filterObject = this.getFilterObjectFromFieldName(filter.field);
+            const queryParam: QueryParamInterface = this.buildQueryParam(filter, filterObject);
+            const query = this.filterQueryBuilderFactory.generateQuery(queryParam);
+
+            // ####################################################
+            //  HAVE SOME DOUBT IN THIS SECTION RECORDSMODEL & RECORDMODEL & RELATIONFIELD
+            // ###################################################
+            // The below code is for tables that might have some relations
+            // so if any filter data is given it also checks the related table for that data and queries it
+            if (filterObject.recordsModel) {
+                let condition = 'some';
+                if (filter.operator === Operators.NOT_IN) {
+                    // The condition is changed to every because we want every objects inside to satisfy this not_in condition
+                    // if we use some then only some of the data objects will satisfy this condtion which is not the thing we want
+                    condition = 'every';
+                }
+
+                const relationObject = {
+                    [filterObject.recordsModel]: {
+                        [condition]: {}
+                    }
+                }
+
+                // If their is a recordModel within the filterObject then we place the query for that field
+                // If not the query is applied to the recordsModel
+                // 
+                // IF RECORDMODEL EXISTS
+                // Eg: relationObject = {
+                //     "recordsModelName": {
+                //       "some": {
+                //         "recordModelName": { ...query }
+                //       }
+                //     }
+                //   }
+                // 
+                // IF RECORDMODEL DOES NOT EXIST
+                // Eg: relationObject = {
+                // "recordsModelName": {
+                //     "some": { ...query }
+                // }
+                // }
+
+                if (filterObject.recordModel) {
+                    relationObject[filterObject.recordsModel][condition] = {
+                        [filterObject.recordModel]: { ...query }
+                    }
+                }
+
+                queryObject.push(relationObject);
+                return;
+            }
+            // #########################################################
+            queryObject.push(query);
+        });
+        return queryObject;
+    }
+
+    buildQueryParam(filter: FilterDto, filterObject: ModuleInterface): QueryParamInterface {
+        const queryParam: QueryParamInterface = {
+            field: filter.field,
+            values: filter.value,
+            operator: filter.operator,
+            type: filterObject.type,
+        }
+        // The field in the referred table
+        if (filterObject.relationField) {
+            queryParam.field = filterObject.relationField;
+        }
+
+        if (filterObject.type === FieldType.STRING) {
+            if (Array.isArray(queryParam.values)) {
+                queryParam.values = queryParam.values.map((value) => this.stringService.escapeSQLCharacters(value));
+            } else {
+                queryParam.values = this.stringService.escapeSQLCharacters(queryParam.values);
+            }
+        }
+
+        if (filterObject.type === FieldType.NUMBER ||
+            filterObject.type === FieldType.DECIMAL ||
+            filterObject.type === FieldType.INTEGER
+        ) {
+            if (Array.isArray(queryParam.values)) {
+                queryParam.values = queryParam.values.map((value) => Number(value));
+            } else {
+                queryParam.values = Number(queryParam.values);
+            }
+        }
+
+        if (filterObject.type === FieldType.DATE ||
+            filterObject.type === FieldType.DATETIME
+        ) {
+            if (!isNaN(queryParam.values)) {
+                queryParam.values = Number(queryParam.values);
+            } else {
+                if (Array.isArray(queryParam.values)) {
+                    queryParam.values = queryParam.values.map((value) => {
+                        return DateTime.fromISO(value, {
+                            zone: 'UTC'
+                        }).toISO();
+                    })
+                } else {
+                    queryParam.values = DateTime.fromISO(queryParam.values, {
+                        zone: 'UTC',
+                    }).toISO();
+                }
+            }
+        }
+        return queryParam;
+    }
+
+    generateSortForQueryBuilder(order: OrderByDto, moduleName: ModuleNames = null) {
+        if (!this.moduleName) {
+            const success = this.setModule(moduleName);
+            if (!success) return;
+        }
+        const field = order?.field || 'createdAt';
+        const value = order?.value || 'desc';
+        let orderBy: any;
+        if (order?.field) {
+            const filterObject = this.getFilterObjectFromFieldName(order.field);
+
+            // If recordsModel exists that is the if the filter object has a relation with some other relation then this piece of code gets executed
+            // it adds the sorting even to those fields
+            if (filterObject.recordsModel) {
+                orderBy = {
+                    [filterObject.recordsModel]: {
+                        [field]: value
+                    }
+                }
+            }
+        }
+
+        if (!orderBy) {
+            orderBy = {
+                [field]: value
+            }
+        }
+        return {
+            orderBy
+        };
     }
 }

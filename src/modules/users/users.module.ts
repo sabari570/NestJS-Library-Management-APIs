@@ -5,7 +5,6 @@ import { UsersRepository } from './users.repository';
 import { StringService } from '../../helpers/string.service';
 import { JwtService } from '@nestjs/jwt';
 import { MetaDataModule } from 'src/meta-data/meta-data.module';
-import { hasFilterModuleConstraint } from 'src/validators/has-filter-module.validator';
 
 @Module({
   imports: [
@@ -19,6 +18,6 @@ import { hasFilterModuleConstraint } from 'src/validators/has-filter-module.vali
     StringService,
     JwtService,
   ],
-  exports: [UsersService, UsersRepository],
+  exports: [UsersService],
 })
 export class UsersModule { }

@@ -1,3 +1,4 @@
+import { Loan } from "@prisma/client";
 import ReturnMetaData from "src/meta-data/interfaces/return-meta-data.interface";
 
 export class UserResDto {
@@ -5,12 +6,14 @@ export class UserResDto {
     email: string;
     name?: string;
     createdAt?: Date;
+    loans?: Loan[];
 
     constructor(data) {
         this.id = data.id;
         this.email = data.email;
         this.name = data.name;
         this.createdAt = data.createdAt;
+        this.loans = data.loans;
     }
 }
 

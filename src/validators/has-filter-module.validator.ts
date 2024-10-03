@@ -2,19 +2,21 @@ import { Injectable } from "@nestjs/common";
 import { registerDecorator, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
 import { MetaDataService } from "src/meta-data/meta-data.service";
 
-@ValidatorConstraint({ async: true })
 @Injectable()
+@ValidatorConstraint()
 export class hasFilterModuleConstraint implements ValidatorConstraintInterface {
     constructor(private metaDataService: MetaDataService) { }
-
-    async validate(value: any, args?: ValidationArguments): Promise<boolean> {
-        // It is from the args.constraints we actually get the module name that is passed from the DTO
-        const [moduleName] = args.constraints;
-        console.log("Metadata service: ", this.metaDataService)
-        return this.metaDataService.setModule(moduleName);
+    async validate(inputDate: string, args: ValidationArguments) {
+        try {
+            const [moduleName] = args.constraints;
+            console.log("Metadata service inside hasFilterModule: ", this.metaDataService)
+            return this.metaDataService.setModule(moduleName);
+        } catch (error) {
+            return false;
+        }
     }
-    defaultMessage() {
-        return 'We cannot filter using those criteria';
+    defaultMessage(validationArguments?: ValidationArguments): string {
+        return ':We cannot filter using those criteria';
     }
 }
 export function hasFilterModule(
