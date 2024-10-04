@@ -3,6 +3,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@
 import { Reflector } from "@nestjs/core";
 import { AppAbility, CaslAbilityFactory } from "src/modules/casl/casl-ability.factory";
 import { PERMISSION_CHECKER_KEY, RequiredPermission } from "src/modules/casl/check-policies.decorator";
+import { Role } from "src/modules/users/enums/role-status.enum";
 import { UsersService } from "src/modules/users/users.service";
 
 @Injectable()
@@ -21,11 +22,22 @@ export class PolciesGuard implements CanActivate {
                 context.getHandler()
             ) || [];
 
-        // Retrieves the request body
-        const params = context.switchToHttp().getRequest().body;
+        // Retrieves the request (includes params and body)
+        const request = context.switchToHttp().getRequest();
+        const params = request.params;
+        const currentUser = this.userService.getCurrentUser();
+
+        // If the params are empty and the currentUser is not an admin then it throws an error
+        if (Object.keys(params).length === 0) {
+            if (currentUser?.role !== Role.ADMIN) {
+                throw new ForbiddenException([
+                    'Sorry, you don’t have access to this API endpoint.',
+                ]);
+            }
+        }
 
         // Retrieves the abilities of the currentUser
-        const ability = await this.caslAbilityFactory.createForUser(this.userService.getCurrentUser())
+        const ability = await this.caslAbilityFactory.createForUser(currentUser)
 
         return requiredPermissions.every((permission) => this.isAllowed(ability, permission, params));
     }
@@ -33,7 +45,7 @@ export class PolciesGuard implements CanActivate {
     private isAllowed(
         ability: AppAbility,
         permission: RequiredPermission,
-        params
+        params: any
     ): boolean {
         let ForbiddenParamName;
         console.log("Params obtained: ", params)
@@ -53,7 +65,7 @@ export class PolciesGuard implements CanActivate {
             )
 
             if (!paramAccess) {
-                ForbiddenParamName = param;
+                ForbiddenParamName = `id: ${params[param]}`;
                 return false;
             }
             return true;

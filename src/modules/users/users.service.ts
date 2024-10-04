@@ -4,6 +4,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   Scope,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,7 +20,8 @@ import { StringService } from '../../helpers/string.service';
 import { MetaDataDto } from './dto/dto';
 import { MetaDataService } from 'src/meta-data/meta-data.service';
 import { ModuleNames } from 'src/meta-data/enums/modules.enum';
-import { UserResDto } from './dto/user-response.dto';
+import { UserAllResDto, UserResDto } from './dto/user-response.dto';
+import ReturnMetaData from 'src/meta-data/interfaces/return-meta-data.interface';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UsersService {
@@ -38,7 +40,7 @@ export class UsersService {
     try {
       const userId = parseInt(id);
       if (!isNaN(userId)) {
-        const userResponse: User = await this.findUserById(userId);
+        const userResponse: UserResDto = await this.findUserById(userId);
         if (userResponse) {
           this.currentUser = {
             id: userResponse.id.toString(),
@@ -67,8 +69,21 @@ export class UsersService {
     return this.usersRepository.findByEmail(email);
   }
 
-  async findUserById(id: number): Promise<User> {
-    return this.usersRepository.findUserById(id);
+  async findUserById(id: number): Promise<UserResDto> {
+    this.loggerService.log(`UserService > findUserById(): called for id: ${id}`);
+    const userRecord = await this.usersRepository.findUserById(id);
+    if (!userRecord) {
+      this.loggerService.warn(`User > findUserById ${id} not found`)
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        data: {
+          message: `User with id ${id} not found`,
+          error: 'Bad Request',
+        },
+      })
+    }
+    this.loggerService.log(`User >  findUserById(): success`);
+    return new UserResDto(userRecord);
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -144,7 +159,7 @@ export class UsersService {
   }
 
   // User service file code to fetch all users using the query params
-  async findAll(query: MetaDataDto) {
+  async findAll(query: MetaDataDto): Promise<UserAllResDto> {
     this.loggerService.log(`User > getAll(): called`);
     try {
       let { queryBuilder, paginationQuery } = this.metaDataService.generateMetaDataForQueryBuilder(
@@ -155,22 +170,101 @@ export class UsersService {
       console.log("User records obtained: ", userRecords);
       const users = userRecords.map((user) => new UserResDto(user));
       const { take, page } = paginationQuery;
+      const totalRecords = await this.usersRepository.count();
+      let totalRecordsWithFilter = totalRecords;
+      if (queryBuilder?.where) {
+        totalRecordsWithFilter = await this.usersRepository.countWithFilters(queryBuilder?.where);
+      }
+      const totalPages = await this.usersRepository.getTotalPagesCount(totalRecordsWithFilter, take);
+
+      const metaData: ReturnMetaData = {
+        countPerPage: take,
+        page,
+        totalRecords,
+        totalRecordsWithFilter,
+        totalPages,
+        filters: query.filter,
+        // Only returns the order object if query.order is present
+        ...(query?.order && {
+          orderBy: {
+            [query.order.field]: query.order.value
+          }
+        })
+      }
+
+      this.loggerService.log(`Users > findAll(): success`);
+      return { metaData, data: users };
     } catch (error) {
       this.loggerService.error(`User > findAll(): ${error}`);
       throw new BadRequestException([Message().defaultApiMessage]);
     }
   }
 
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    this.loggerService.log(`User >  update(): called`);
+    const userToEdit = this.usersRepository.findUserById(id);
+    if (!userToEdit) {
+      this.loggerService.warn(`User > updateUser with ${id} not found`)
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        data: {
+          message: `User with id ${id} not found`,
+          error: 'Bad Request',
+        },
+      })
+    }
+    let result: User;
+    try {
+      const updatedUserData: UserInterface = {
+        email: updateUserDto?.email,
+        name: updateUserDto?.name,
+      }
+      result = await this.usersRepository.update(id, updatedUserData);
+      this.loggerService.log(`User > update(): success`);
+    } catch (error) {
+      this.loggerService.error(`User > update(): error updateing contact, ${error}`);
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+      if (error.code === 'P2002') {
+        this.loggerService.warn(`User > update(): email conflict error`);
+        throw new BadRequestException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          data: {
+            message: 'Email is already in use. Please use a different email.',
+            error: 'Unique Constraint Violation',
+          },
+        })
+      }
+      throw new BadRequestException([Message().defaultApiMessage]);
+    }
+    return {
+      statusCode: HttpStatus.OK,
+      data: new UserResDto(result),
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+  async remove(id: number) {
+    this.loggerService.log(`User > remove(): called`);
+    const user: UserResDto = await this.findUserById(id);
+    if (!user) {
+      this.loggerService.warn(`User > removeUser with ${id} not found`)
+      throw new NotFoundException({
+        statusCode: HttpStatus.NOT_FOUND,
+        data: {
+          message: `User with id ${id} not found`,
+          error: 'Bad Request',
+        },
+      })
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    try {
+      await this.usersRepository.delete(id);
+      this.loggerService.log(`User > remove(): success`);
+      return {
+        statusCode: HttpStatus.OK,
+      }
+    } catch (error) {
+      this.loggerService.error(`User > remove(): error removeUser ${error}`);
+      throw new BadRequestException([Message().defaultApiMessage]);
+    }
   }
 }

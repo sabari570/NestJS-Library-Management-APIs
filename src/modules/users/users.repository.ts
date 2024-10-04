@@ -86,11 +86,39 @@ export class UsersRepository {
   }
 
   // Code to count the total records after applying filter
-  // async countWithFilters(where): Promise<number> {
-  //   const { _count } = await this.client.user.aggregate({
-  //     _count: true,
-  //     where,
-  //   });
-  //   return _count;
-  // }
+  async countWithFilters(where): Promise<number> {
+    const { _count } = await this.client.user.aggregate({
+      // counts all the records, if where is provided then it counts all the records that satisfies this condition
+      _count: true,
+      where,
+    });
+    return Number(_count);
+  }
+
+  // Code to get the total pages count
+  async getTotalPagesCount(count: number, take: number) {
+    return Math.ceil(count / take);
+  }
+
+  // Code to update the user details
+  async update(id: number, user: UserInterface) {
+    return this.client.user.update({
+      where: {
+        id
+      },
+      data: {
+        email: user.email,
+        name: user.name,
+      }
+    });
+  }
+
+  // Code to delete the user details
+  async delete(id: number) {
+    return this.client.user.delete({
+      where: {
+        id
+      }
+    })
+  }
 }

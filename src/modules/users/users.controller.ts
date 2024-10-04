@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, Param, Delete, Res, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Delete, Res, UseGuards, Query, Put } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AccessTokenAuthGuard } from '../auth/token-auth.guard';
@@ -6,7 +6,9 @@ import { PolciesGuard } from '../guards/policies-guard/policies.guard';
 import { CheckPermissions } from '../casl/check-policies.decorator';
 import { Action } from '../casl/enums/actions.enum';
 import { Subject } from '../casl/enums/subjects.enum';
-import { MetaDataDto } from './dto/dto';
+import { MetaDataDto, UserParamDto } from './dto/dto';
+import { UserAllResDto, UserResDto } from './dto/user-response.dto';
+import { query, Response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -18,24 +20,40 @@ export class UsersController {
   @Get()
   @UseGuards(AccessTokenAuthGuard, PolciesGuard)
   @CheckPermissions([Action.READ, Subject.USER])
-  findAll(
+  async findAll(
     @Query() query: MetaDataDto
-  ) {
+  ): Promise<UserAllResDto> {
     return this.usersService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
+  @CheckPermissions([Action.READ, Subject.USER])
+  async findOne(@Param() params: UserParamDto) {
+    const { id } = params;
+    return this.usersService.findUserById(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Put(':id')
+  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
+  @CheckPermissions([Action.UPDATE, Subject.USER])
+  async update(
+    @Param() params: UserParamDto,
+    @Body() updateUserBody: UpdateUserDto,
+    @Res() response: Response,
+  ) {
+    const { id } = params;
+    const { statusCode, data } = await this.usersService.update(id, updateUserBody);
+    return response.status(statusCode).send(data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
+  @CheckPermissions([Action.DELETE, Subject.USER])
+  async remove(
+    @Param() params: UserParamDto,
+  ) {
+    const { id } = params;
+    return this.usersService.remove(id);
   }
 }

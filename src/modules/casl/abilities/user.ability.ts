@@ -9,11 +9,6 @@ export default function createUserAbility(userId: string) {
             subject: Subject.USER,
             conditions: { id: userId },
         },
-        {
-            inverted: true,
-            action: Action.READ,
-            subject: Subject.USER,
-        },
         // User can update their own user data
         {
             action: Action.UPDATE,

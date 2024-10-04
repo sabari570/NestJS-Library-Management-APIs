@@ -1,10 +1,8 @@
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { IsArray, IsDefined, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from "class-validator";
 import { toNumber } from "src/helpers/cast.helper";
 import { FilterDto } from "src/meta-data/dto/filter.dto";
 import { OrderByDto } from "src/meta-data/dto/order.dto";
-import { ModuleNames } from "src/meta-data/enums/modules.enum";
-import { hasFilterModule } from "src/validators/has-filter-module.validator";
 
 export class MetaDataDto {
     @IsOptional()
@@ -30,4 +28,11 @@ export class MetaDataDto {
     // @hasFilterModule(ModuleNames.USERS)
     @IsOptional()
     order?: OrderByDto;
+}
+
+// DTO for user params
+export class UserParamDto {
+    @IsNotEmpty()
+    @IsNumber()
+    id: number;
 }

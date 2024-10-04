@@ -15,13 +15,11 @@ export class CaslAbilityFactory {
             // If the user logged in is ADMIN then,
             case Role.ADMIN: {
                 return admin;
-                break;
             }
 
             // If the user logged in is USER then,
             case Role.USER: {
                 return createUserAbility(user.id);
-                break;
             }
             default: break;
         }

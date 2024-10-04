@@ -17,5 +17,7 @@ export const PERMISSION_CHECKER_KEY = 'permission_checker_params_key';
 
 // * This attaches the permissions as metadata to the route handler (or class). 
 // * Later, you can retrieve this metadata (e.g., in a guard) to check if the current user has the required permissions.
+// The params object contains a list of actions(permissions) that an user is allowed to perform
+// so it sets the metaData with that data
 export const CheckPermissions =
     (...params: RequiredPermission[]): CustomDecorator<string> => SetMetadata(PERMISSION_CHECKER_KEY, params);
