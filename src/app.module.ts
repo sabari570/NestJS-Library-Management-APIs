@@ -9,6 +9,7 @@ import { MetaDataModule } from './meta-data/meta-data.module';
 import { ValidatorModule } from './validators/validator.module';
 import { BooksModule } from './modules/books/books.module';
 import { AuthorsModule } from './modules/authors/authors.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { AuthorsModule } from './modules/authors/authors.module';
     MetaDataModule,
     ValidatorModule,
     BooksModule,
-    AuthorsModule
+    AuthorsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -23,11 +23,14 @@ export default function userModule(): ModuleInterface[] {
             field: 'createdAt',
             type: FieldType.DATE,
         },
-        {
-            field: 'loans', // current model field name
-            type: FieldType.STRING, // type of the field
-            recordsModel: 'Loan',   // the name of the model we are refering
-            relationField: 'Book',  // the name of the field to the model we are referring
-        }
+        // ##################
+        // FILTER ACCORDING TO THE LOAN DATA (LATER)
+        // #################
+        // {
+        //     field: 'loans', // current model field name
+        //     type: FieldType.STRING, // type of the field
+        //     recordsModel: 'Loan',   // the name of the model we are refering
+        //     relationField: 'Book',  // the name of the field to the model we are referring
+        // }
     ];
 }

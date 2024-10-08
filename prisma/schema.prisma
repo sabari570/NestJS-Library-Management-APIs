@@ -49,7 +49,7 @@ model Book {
   title      String
   isbn       String     @unique
   published  DateTime
-  autors     Author[]   @relation("BookAuthors") // If you provide a relation name like this Prisma automatically handles the creation of foreign keys and the necessary join tables behind the scenes 
+  authors     Author[]   @relation("BookAuthors") // If you provide a relation name like this Prisma automatically handles the creation of foreign keys and the necessary join tables behind the scenes 
   categories Category[] @relation("BookCategories")
   loans      Loan[]
   createdAt  DateTime   @default(now()) @map("created_at")
@@ -69,9 +69,11 @@ model Author {
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  books Book[] @relation("BookCategories")
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  books     Book[]   @relation("BookCategories")
 
   @@map("categories")
 }
@@ -79,9 +81,9 @@ model Category {
 model Loan {
   id         Int       @id @default(autoincrement())
   userId     Int       @map("user_id")
-  User       User      @relation(fields: [userId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
   bookId     Int       @map("book_id")
-  Book       Book      @relation(fields: [bookId], references: [id])
+  book       Book      @relation(fields: [bookId], references: [id])
   loanDate   DateTime  @default(now()) @map("loan_date")
   returnDate DateTime? @map("return_date")
   createdAt  DateTime  @default(now()) @map("created_at")

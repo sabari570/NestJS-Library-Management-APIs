@@ -19,7 +19,7 @@ export class MetaDataDto {
     @ValidateNested({ each: true }) // Checks if the value is an array and if yes then validate each of the values inside the array
     @IsArray()
     @Type(() => FilterDto)
-    // @hasFilterModule(ModuleNames.USERS)
+    // @hasFilterModule(ModuleNames.AUHTORS)
     filter?: [FilterDto]
 
     @ValidateNested()

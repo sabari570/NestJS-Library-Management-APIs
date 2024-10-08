@@ -10,6 +10,7 @@ import { Subject } from '../casl/enums/subjects.enum';
 import { Response } from 'express';
 import { MetaDataDto } from '../users/dto/dto';
 import { AuthorAllResDto } from './dto/authors-response.dto';
+import { AuthorParamDto } from './dto/dto';
 
 @Controller('authors')
 export class AuthorsController {
@@ -26,30 +27,39 @@ export class AuthorsController {
   @Get()
   @UseGuards(AccessTokenAuthGuard)
   @CheckPermissions([Action.READ, Subject.BOOK])
-  findAll(
+  async findAll(
     @Query() query: MetaDataDto
-  ) {
+  ): Promise<AuthorAllResDto> {
     return this.authorsService.findAll(query);
   }
 
   @Get(':id')
-  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
-  @CheckPermissions([Action.CREATE, Subject.BOOK])
-  findOne(@Param('id') id: string) {
-    return this.authorsService.findOne(+id);
+  @UseGuards(AccessTokenAuthGuard)
+  @CheckPermissions([Action.READ, Subject.BOOK])
+  async findOne(@Param() params: AuthorParamDto) {
+    const { id } = params;
+    return this.authorsService.findAuthorById(id);
   }
 
   @Put(':id')
-  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
-  @CheckPermissions([Action.CREATE, Subject.BOOK])
-  update(@Param('id') id: string, @Body() updateAuthorDto: UpdateAuthorDto) {
-    return this.authorsService.update(+id, updateAuthorDto);
+  @CheckPermissions([Action.UPDATE, Subject.USER])
+  async update(
+    @Param() params: AuthorParamDto,
+    @Body() updateAuthorBody: UpdateAuthorDto,
+    @Res() response: Response,
+  ) {
+    const { id } = params;
+    const { statusCode, data } = await this.authorsService.update(id, updateAuthorBody);
+    return response.status(statusCode).send(data);
   }
 
   @Delete(':id')
-  @UseGuards(AccessTokenAuthGuard, PolciesGuard)
-  @CheckPermissions([Action.CREATE, Subject.BOOK])
-  remove(@Param('id') id: string) {
-    return this.authorsService.remove(+id);
+  @UseGuards(AccessTokenAuthGuard)
+  @CheckPermissions([Action.DELETE, Subject.USER])
+  async remove(
+    @Param() params: AuthorParamDto,
+  ) {
+    const { id } = params;
+    return this.authorsService.remove(id);
   }
 }

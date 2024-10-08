@@ -1,31 +1,32 @@
 import { FieldType } from "../enums/field-type.enum";
 import ModuleInterface from "../interfaces/filter.interface";
 
-export default function authorModule(): ModuleInterface[] {
+export default function booksModule(): ModuleInterface[] {
     return [
         {
             field: 'id',
             type: FieldType.STRING,
         },
         {
-            field: 'name',
+            field: 'title',
             type: FieldType.STRING,
         },
         {
-            field: 'createdAt',
-            type: FieldType.DATE,
+            field: 'isbn',
+            type: FieldType.STRING,
         },
         {
-            field: 'updatedAt',
-            type: FieldType.DATE,
+            field: 'published',
+            type: FieldType.DATETIME,
         },
+
         // ##################
-        // FILTER ACCORDING TO THE BOOK NAME (LATER)
+        // FILTER ACCORDING TO THE AUTHOR NAME (LATER)
         // #################
         // {
-        //     field: 'books',
+        //     field: 'authors',
         //     type: FieldType.STRING,
-        //     recordsModel: 'Book',
+        //     recordsModel: 'Author',
         //     relationField: 'title'
         // }
     ];

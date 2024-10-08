@@ -31,7 +31,7 @@ export class UsersRepository {
       include: {
         loans: {
           include: {
-            Book: true,
+            book: true,
           },
         },
       },
@@ -46,7 +46,7 @@ export class UsersRepository {
       include: {
         loans: {
           include: {
-            Book: true,
+            book: true,
           },
         },
       },

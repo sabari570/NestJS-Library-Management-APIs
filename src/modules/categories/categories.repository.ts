@@ -1,10 +1,10 @@
 import { Injectable, Scope } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
-import AuthorInterface from "./interface/author.interface";
-import { Author } from "@prisma/client";
+import CategoryInterface from "./interface/category.interface";
+import { Category } from "@prisma/client";
 
 @Injectable({ scope: Scope.REQUEST })
-export class AuthorsRepository {
+export class CategoriesRepository {
     constructor(private readonly client: PrismaService) { }
 
     // Code to check whether the record exists or not
@@ -17,24 +17,24 @@ export class AuthorsRepository {
                 }
             }
         }
-        const record = await this.client.author.findFirst({ ...query });
+        const record = await this.client.category.findFirst({ ...query });
         return !!record;
     }
 
 
-    // Code for creating an author
-    async create(author: AuthorInterface) {
-        return await this.client.author.create({
+    // Code for creating a category
+    async create(category: CategoryInterface) {
+        return this.client.category.create({
             data: {
-                name: author.name
+                name: category.name
             }
         })
     }
 
 
     // Code to find an author through his name
-    async findByAuthorName(name: string) {
-        return await this.client.author.findUnique({
+    async findByCategoryName(name: string) {
+        return await this.client.category.findUnique({
             where: {
                 name,
             },
@@ -51,24 +51,16 @@ export class AuthorsRepository {
 
     // Code to fetch all the authors
     async getAll(queryBuilder) {
-        return await this.client.author.findMany({
+        return await this.client.category.findMany({
             ...queryBuilder,
             include: {
-                // This is how we can select certain fields to be displayed which we feel necessary
-                books:
-                {
+                books: {
                     select: {
                         id: true,
                         title: true,
                         isbn: true,
                         published: true,
-                        categories: {
-                            select: {
-                                id: true,
-                                name: true,
-                            }
-                        }
-                    },
+                    }
                 },
             }
         })
@@ -76,12 +68,12 @@ export class AuthorsRepository {
 
     // code to count the total records
     async count(): Promise<number> {
-        return await this.client.author.count();
+        return await this.client.category.count();
     }
 
     // Code to count the total records after applying filter
     async countWithFilters(where): Promise<number> {
-        const { _count } = await this.client.user.aggregate({
+        const { _count } = await this.client.category.aggregate({
             // counts all the records, if where is provided then it counts all the records that satisfies this condition
             _count: true,
             where,
@@ -95,8 +87,8 @@ export class AuthorsRepository {
     }
 
     // code to fetch author by id
-    async findAuthorById(id: number) {
-        return await this.client.author.findUnique({
+    async findCategoryById(id: number) {
+        return await this.client.category.findUnique({
             where: {
                 id,
             },
@@ -107,12 +99,6 @@ export class AuthorsRepository {
                         title: true,
                         isbn: true,
                         published: true,
-                        categories: {
-                            select: {
-                                id: true,
-                                name: true,
-                            }
-                        }
                     }
                 },
             },
@@ -120,20 +106,20 @@ export class AuthorsRepository {
     }
 
     // Code to update the author details
-    async update(id: number, author: AuthorInterface) {
-        return await this.client.author.update({
+    async update(id: number, category: CategoryInterface) {
+        return this.client.category.update({
             where: {
                 id
             },
             data: {
-                name: author.name,
+                name: category.name,
             }
         });
     }
 
     // Code to delete the author details
     async delete(id: number) {
-        return await this.client.author.delete({
+        return this.client.category.delete({
             where: {
                 id
             }
@@ -141,11 +127,11 @@ export class AuthorsRepository {
     }
 
     // Code to find if author id is present or not
-    async validateAuthors(authorIds: number[]): Promise<Author[]> {
-        return await this.client.author.findMany({
+    async validateCategories(categoryIds: number[]): Promise<Category[]> {
+        return await this.client.category.findMany({
             where: {
                 id: {
-                    in: authorIds
+                    in: categoryIds
                 }
             }
         });

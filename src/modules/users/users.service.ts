@@ -167,7 +167,6 @@ export class UsersService {
         ModuleNames.USERS,
       )
       const userRecords = await this.usersRepository.getAll(queryBuilder);
-      console.log("User records obtained: ", userRecords);
       const users = userRecords.map((user) => new UserResDto(user));
       const { take, page } = paginationQuery;
       const totalRecords = await this.usersRepository.count();
@@ -222,7 +221,7 @@ export class UsersService {
       result = await this.usersRepository.update(id, updatedUserData);
       this.loggerService.log(`User > update(): success`);
     } catch (error) {
-      this.loggerService.error(`User > update(): error updateing contact, ${error}`);
+      this.loggerService.error(`User > update(): error updateing user, ${error}`);
 
       if (error.code === 'P2002') {
         this.loggerService.warn(`User > update(): email conflict error`);

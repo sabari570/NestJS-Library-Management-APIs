@@ -1,4 +1,6 @@
 export enum ModuleNames {
     USERS = 'users',
-    BOOKS = 'books'
+    BOOKS = 'books',
+    AUHTORS = 'authors',
+    CATEGORIES = 'categories'
 }

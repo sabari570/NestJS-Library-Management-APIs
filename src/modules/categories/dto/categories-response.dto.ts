@@ -1,12 +1,12 @@
 import { Book } from "@prisma/client";
 import ReturnMetaData from "src/meta-data/interfaces/return-meta-data.interface";
 
-export class AuthorResDto {
+export class CategoryResDto {
     id: number;
     name: string;
+    books?: Book[];
     createdAt?: Date;
     updatedAt?: Date;
-    books?: Book[];
 
     constructor(data) {
         this.id = data.id;
@@ -15,7 +15,7 @@ export class AuthorResDto {
     }
 }
 
-export class AuthorAllResDto {
+export class CategoryAllResDto {
     metaData?: ReturnMetaData;
-    data?: AuthorResDto[];
+    data?: CategoryResDto[];
 }
